@@ -1,129 +1,49 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>音楽再生デモ</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Sync Demo</title>
 </head>
 <body>
-  <h1>音楽再生デモ</h1>
-  <p id="status">時刻を同期中...</p>
-  <button id="start-button">再生を有効化する</button>
+    <h1>Audio Sync Demo</h1>
+    <button id="startButton">Start Audio Playback</button>
+    <audio id="audio" preload="auto" src="your-audio-file.mp3"></audio>
+    <script>
+        // 再生開始時刻（例: 20:00:00）
+        const targetTime = new Date();
+        targetTime.setHours(17, 30, 0, 0); // 今日の20時00分00秒
 
-  <script>
-    // Safari対応のAudioContext
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    let audioBuffer;
+        const audio = document.getElementById('audio');
+        const startButton = document.getElementById('startButton');
 
-    // Safari制限解除: 無音再生
-    async function unlockAudioContext() {
-      try {
-        const silentSource = audioContext.createBufferSource();
-        const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
-        silentSource.buffer = buffer;
-        silentSource.connect(audioContext.destination);
-        silentSource.start(0);
-        await silentSource.stop(0); // 無音の一瞬再生
-        console.log('AudioContext unlocked.');
-      } catch (error) {
-        console.error('無音再生エラー:', error);
-      }
-    }
+        // ボタンをクリックしたときに再生許可を得る
+        startButton.addEventListener('click', async () => {
+            try {
+                await audio.play();
+                audio.pause(); // 再生を即停止して権限だけ取得
+                alert('Audio playback authorized. Waiting for the target time.');
+                startButton.style.display = 'none'; // ボタンを非表示
+            } catch (error) {
+                alert('Failed to authorize audio playback: ' + error);
+            }
+        });
 
-    // 音声ファイルのプリロード
-    async function preloadAudio() {
-      try {
-        const response = await fetch('your-audio-file.mp3'); // 適切なファイル形式を使用
-        if (!response.ok) {
-          throw new Error('音声ファイルの読み込みに失敗しました。ステータスコード: ' + response.status);
+        // 時刻同期チェック
+        function syncAudioPlayback() {
+            const now = new Date();
+            const delay = targetTime - now;
+
+            if (delay <= 0) {
+                audio.play().catch((error) => {
+                    console.error('Playback failed:', error);
+                });
+                clearInterval(intervalId); // タイマーをクリア
+            }
         }
-        const arrayBuffer = await response.arrayBuffer();
-        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        console.log('音声がプリロードされました。');
-        document.getElementById('status').textContent = '音声がプリロードされました。';
-      } catch (error) {
-        console.error('音声プリロードエラー:', error);
-        document.getElementById('status').textContent = '音声のプリロードに失敗しました。';
-      }
-    }
 
-    // 音声を再生する
-    function playAudioAt(timeToStart) {
-      try {
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start(timeToStart);
-        console.log('Audio playback started at:', timeToStart);
-      } catch (error) {
-        console.error('再生エラー:', error);
-      }
-    }
-
-    // NTP時刻の取得
-    async function fetchCurrentTime() {
-      try {
-        const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
-        const data = await response.json();
-        console.log('NTP時刻取得:', data.utc_datetime);
-        return new Date(data.utc_datetime).getTime();
-      } catch (error) {
-        console.error('NTP時刻取得エラー:', error);
-        return Date.now();
-      }
-    }
-
-    // 指定時刻を取得
-    function getTargetTime(hour, minute, second) {
-      const now = new Date();
-      const targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, second);
-      return targetTime.getTime();
-    }
-
-    async function main() {
-      const status = document.getElementById('status');
-      const button = document.getElementById('start-button');
-
-      button.addEventListener('click', async () => {
-        try {
-          // AudioContextの再開
-          await audioContext.resume();
-          console.log('AudioContext resumed.');
-
-          // Safariの制限解除 (無音再生)
-          await unlockAudioContext();
-
-          // 音声ファイルのプリロード
-          await preloadAudio();
-
-          // NTP時刻取得
-          const ntpTime = await fetchCurrentTime();
-          const targetTime = getTargetTime(17, 27, 0); // 今日の20時00分00秒
-          const delay = targetTime - ntpTime;
-
-          console.log('現在の時刻:', ntpTime);
-          console.log('再生開始までの遅延:', delay);
-
-          if (delay > 0) {
-            status.textContent = `再生開始まで: ${Math.round(delay / 1000)}秒`;
-
-            // AudioContext内の再生タイミングを計算
-            const playbackTime = audioContext.currentTime + delay / 1000;
-            setTimeout(() => {
-              playAudioAt(playbackTime);
-              status.textContent = '再生中';
-            }, delay);
-          } else {
-            status.textContent = '指定時刻が過ぎています。';
-          }
-        } catch (error) {
-          console.error('エラー:', error);
-          status.textContent = 'エラーが発生しました: ' + error.message;
-        }
-      });
-    }
-
-    main();
-  </script>
+        // 1秒ごとに再生タイミングを確認
+        const intervalId = setInterval(syncAudioPlayback, 1000);
+    </script>
 </body>
 </html>
