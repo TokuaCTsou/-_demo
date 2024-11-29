@@ -8,44 +8,80 @@
 <body>
     <h1>Audio Sync Demo</h1>
     <button id="startButton">Start Audio Playback</button>
-    <audio id="audio" preload="auto" src="your-audio-file.mp3"></audio>
+    <p id="status">Waiting for user interaction...</p>
     <script>
         // 再生開始時刻（例: 20:00:00）
         const targetTime = new Date();
-        targetTime.setHours(16, 42, 0, 0); // 今日の20時00分00秒
+        targetTime.setHours(17, 03, 0, 0); // 今日の20時00分00秒
 
-        const audio = document.getElementById('audio');
-        audio.load(); // 音声を事前にロード
         const startButton = document.getElementById('startButton');
+        const status = document.getElementById('status');
+
+        // Web Audio API setup
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let audioBuffer;
+
+        // 音声のプリロード
+        async function preloadAudio() {
+            try {
+                const response = await fetch('your-audio-file.mp3');
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                status.textContent = 'Audio preloaded.';
+            } catch (error) {
+                status.textContent = 'Failed to preload audio: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        // NTPサーバーから現在時刻と遅延を取得
+        async function fetchCurrentTimeWithDelay() {
+            const start = performance.now();
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+            const end = performance.now();
+            const latency = (end - start) / 2; // 往復遅延の半分を計算
+            const data = await response.json();
+            const serverTime = new Date(data.utc_datetime).getTime();
+            return serverTime + latency;
+        }
+
+        // 音声を再生
+        function playAudioAtTime(playTime) {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            source.start(playTime);
+            status.textContent = 'Audio playback started.';
+        }
 
         // ボタンをクリックしたときに再生許可を得る
         startButton.addEventListener('click', async () => {
             try {
-                await audio.play();
-                audio.pause(); // 再生権限取得後すぐ停止
-                audio.currentTime = 0; // 再生位置をリセット
-                alert('Audio playback authorized. Waiting for the target time.');
-                startButton.style.display = 'none';
+                // 無音再生でSafariの再生許可を取得
+                const silentBuffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+                const silentSource = audioContext.createBufferSource();
+                silentSource.buffer = silentBuffer;
+                silentSource.connect(audioContext.destination);
+                silentSource.start(0);
+                await preloadAudio();
+
+                alert('Audio playback authorized and preloaded. Waiting for the target time.');
+                startButton.style.display = 'none'; // ボタンを非表示
+
+                // NTP時刻と遅延を取得して再生タイミングを調整
+                const ntpTime = await fetchCurrentTimeWithDelay();
+                const delay = targetTime.getTime() - ntpTime;
+                if (delay > 0) {
+                    status.textContent = `Playback scheduled in ${(delay / 1000).toFixed(2)} seconds.`;
+                    const playTime = audioContext.currentTime + delay / 1000;
+                    setTimeout(() => playAudioAtTime(playTime), delay);
+                } else {
+                    status.textContent = 'Target time has already passed.';
+                }
             } catch (error) {
-                alert('Failed to authorize audio playback: ' + error);
+                alert('Failed to authorize audio playback or preload: ' + error.message);
             }
         });
-
-        // 時刻同期チェック
-        function syncAudioPlayback() {
-            const now = new Date();
-            const delay = targetTime - now;
-
-            if (delay <= 0) {
-                audio.play().catch((error) => {
-                    console.error('Playback failed:', error);
-                });
-                clearInterval(intervalId); // タイマーをクリア
-            }
-        }
-
-        // 1秒ごとに再生タイミングを確認
-        const intervalId = setInterval(syncAudioPlayback, 1000);
     </script>
 </body>
 </html>
