@@ -84,7 +84,7 @@
 
           // NTP時刻取得
           const ntpTime = await fetchCurrentTime();
-          const targetTime = getTargetTime(16, 25, 0); // 今日の20時00分00秒
+          const targetTime = getTargetTime(16, 27, 0); // 今日の20時00分00秒
           const delay = targetTime - ntpTime;
 
           if (delay > 0) {
