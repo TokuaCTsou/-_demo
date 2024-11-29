@@ -11,6 +11,10 @@
   <button id="start-button">再生を有効化する</button>
 
   <script>
+    // Safari 対応: AudioContext の初期化
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let audioBuffer;
+
     // 現在の日付を取得して、指定時刻（例: 今日の20時00分00秒）を設定
     function getTargetTime(hour, minute, second) {
       const now = new Date();
@@ -30,60 +34,51 @@
       }
     }
 
+    // 音声ファイルのプリロード
+    async function preloadAudio() {
+      try {
+        const response = await fetch('your-audio-file.mp3'); // ファイル形式を .wav に変更
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        document.getElementById('status').textContent = '音声がプリロードされました。';
+      } catch (error) {
+        console.error('音声プリロードエラー:', error);
+        document.getElementById('status').textContent = '音声のプリロードに失敗しました。';
+      }
+    }
+
+    // 音声を再生する
+    function playAudioAt(timeToStart) {
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      source.start(timeToStart);
+    }
+
     async function main() {
       const status = document.getElementById('status');
       const button = document.getElementById('start-button');
 
-      // Web Audio API の初期化
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      let audioBuffer;
-
-      // 音声ファイルのプリロード
-      async function preloadAudio() {
-        try {
-          const response = await fetch('your-audio-file.mp3'); // 音声ファイルのパスを指定
-          const arrayBuffer = await response.arrayBuffer();
-          audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-          status.textContent = '音声がプリロードされました。';
-        } catch (error) {
-          console.error('音声プリロードエラー:', error);
-          status.textContent = '音声のプリロードに失敗しました。';
-        }
-      }
-
-      // 音声を再生する
-      function playAudioAt(timeToStart) {
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start(timeToStart); // AudioContext の絶対時間で再生開始
-      }
-
-      // 今日の20時00分00秒を指定
-      const targetTime = getTargetTime(16, 04, 0); // 20:00:00 に設定
-
-      // ボタンのクリックで音楽再生の準備を開始
+      // 再生権限の取得 (Safari 用)
       button.addEventListener('click', async () => {
-        button.disabled = true;
-
         try {
-          // AudioContextをリサンプル（Safariでの再生権限解除対策）
+          // AudioContext の再開 (Safari 対策)
           await audioContext.resume();
+          status.textContent = 'AudioContext が有効化されました。';
 
-          // 音声をプリロード
+          // 音声ファイルをプリロード
           await preloadAudio();
 
           // 現在のNTP時刻を取得
+          const targetTime = getTargetTime(16, 11, 0); // 20:00:00 に設定
           const ntpTime = await fetchCurrentTime();
           const delay = targetTime - ntpTime;
 
           if (delay > 0) {
             status.textContent = `再生開始まで: ${Math.round(delay / 1000)}秒`;
 
-            // 再生開始時間をAudioContextの現在時間から計算
+            // 再生開始時間をスケジュール
             const playbackTime = audioContext.currentTime + delay / 1000;
-
-            // 再生をスケジュール
             setTimeout(() => {
               playAudioAt(playbackTime);
               status.textContent = '再生中';
@@ -92,6 +87,7 @@
             status.textContent = '指定時刻が過ぎています。';
           }
         } catch (error) {
+          console.error('エラー:', error);
           status.textContent = 'エラーが発生しました: ' + error.message;
         }
       });
