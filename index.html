@@ -17,25 +17,23 @@
 
     // Safari制限解除: 無音再生
     async function unlockAudioContext() {
-      return new Promise(async (resolve) => {
-        try {
-          const silentSource = audioContext.createBufferSource();
-          const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
-          silentSource.buffer = buffer;
-          silentSource.connect(audioContext.destination);
-          silentSource.start(0);
-          silentSource.onended = resolve; // 再生完了後にPromiseを解決
-        } catch (error) {
-          console.error('無音再生エラー:', error);
-          resolve();
-        }
-      });
+      try {
+        const silentSource = audioContext.createBufferSource();
+        const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+        silentSource.buffer = buffer;
+        silentSource.connect(audioContext.destination);
+        silentSource.start(0);
+        await silentSource.stop(0); // 無音の一瞬再生
+        console.log('AudioContext unlocked.');
+      } catch (error) {
+        console.error('無音再生エラー:', error);
+      }
     }
 
     // 音声ファイルのプリロード
     async function preloadAudio() {
       try {
-        const response = await fetch('your-audio-file.mp3'); // MP3形式を推奨
+        const response = await fetch('your-audio-file.mp3'); // 適切なファイル形式を使用
         if (!response.ok) {
           throw new Error('音声ファイルの読み込みに失敗しました。ステータスコード: ' + response.status);
         }
@@ -90,6 +88,7 @@
         try {
           // AudioContextの再開
           await audioContext.resume();
+          console.log('AudioContext resumed.');
 
           // Safariの制限解除 (無音再生)
           await unlockAudioContext();
@@ -99,7 +98,7 @@
 
           // NTP時刻取得
           const ntpTime = await fetchCurrentTime();
-          const targetTime = getTargetTime(17, 23, 0); // 今日の20時00分00秒
+          const targetTime = getTargetTime(17, 27, 0); // 今日の20時00分00秒
           const delay = targetTime - ntpTime;
 
           console.log('現在の時刻:', ntpTime);
