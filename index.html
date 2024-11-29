@@ -37,7 +37,7 @@
     // 音声ファイルのプリロード
     async function preloadAudio() {
       try {
-        const response = await fetch('your-audio-file.mp3'); // ファイル形式を .wav に変更
+        const response = await fetch('your-audio-file.mp3'); // WAV ファイルを推奨
         const arrayBuffer = await response.arrayBuffer();
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         document.getElementById('status').textContent = '音声がプリロードされました。';
@@ -55,6 +55,16 @@
       source.start(timeToStart);
     }
 
+    // Safari の再生制限を解除
+    async function unlockAudioContext() {
+      const silentSource = audioContext.createBufferSource();
+      const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+      silentSource.buffer = buffer;
+      silentSource.connect(audioContext.destination);
+      silentSource.start(0);
+      await silentSource.stop(0); // 一瞬だけ無音を再生して AudioContext を解放
+    }
+
     async function main() {
       const status = document.getElementById('status');
       const button = document.getElementById('start-button');
@@ -64,13 +74,16 @@
         try {
           // AudioContext の再開 (Safari 対策)
           await audioContext.resume();
+
+          // 無音の再生で Safari の制限を解除
+          await unlockAudioContext();
           status.textContent = 'AudioContext が有効化されました。';
 
           // 音声ファイルをプリロード
           await preloadAudio();
 
-          // 現在のNTP時刻を取得
-          const targetTime = getTargetTime(16, 11, 0); // 20:00:00 に設定
+          // 今日の20時00分00秒を指定
+          const targetTime = getTargetTime(16, 19, 0); // 20:00:00 に設定
           const ntpTime = await fetchCurrentTime();
           const delay = targetTime - ntpTime;
 
