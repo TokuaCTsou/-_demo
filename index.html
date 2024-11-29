@@ -12,18 +12,20 @@
     <script>
         // 再生開始時刻（例: 20:00:00）
         const targetTime = new Date();
-        targetTime.setHours(16, 30, 0, 0); // 今日の20時00分00秒
+        targetTime.setHours(16, 42, 0, 0); // 今日の20時00分00秒
 
         const audio = document.getElementById('audio');
+        audio.load(); // 音声を事前にロード
         const startButton = document.getElementById('startButton');
 
         // ボタンをクリックしたときに再生許可を得る
         startButton.addEventListener('click', async () => {
             try {
                 await audio.play();
-                audio.pause(); // 再生を即停止して権限だけ取得
+                audio.pause(); // 再生権限取得後すぐ停止
+                audio.currentTime = 0; // 再生位置をリセット
                 alert('Audio playback authorized. Waiting for the target time.');
-                startButton.style.display = 'none'; // ボタンを非表示
+                startButton.style.display = 'none';
             } catch (error) {
                 alert('Failed to authorize audio playback: ' + error);
             }
