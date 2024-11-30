@@ -54,7 +54,7 @@
   <script>
     // 再生開始時刻（例: 18:55:00）
     const targetTime = new Date();
-    targetTime.setHours(20, 31, 0, 0); // 今日の18時55分00秒
+    targetTime.setHours(20, 44, 0, 0); // 今日の18時55分00秒
 
     const audio = document.getElementById('audio');
     const startButton = document.getElementById('startButton');
@@ -91,19 +91,22 @@
 
     // 時刻同期チェック
     function syncAudioPlayback() {
-      const now = new Date();
-      const delay = targetTime - now;
+  const now = new Date();
+  const delay = targetTime - now;
 
-      if (delay <= 0) {
-        audio.play().catch((error) => {
-          console.error('Playback failed:', error);
-        });
-        clearInterval(intervalId); // タイマーをクリア
-      }
-    }
+  if (delay <= 0) {
+    audio.play().catch((error) => {
+      console.error('Playback failed:', error);
+    });
+    cancelAnimationFrame(animationFrameId); // アニメーションのループを停止
+  } else {
+    animationFrameId = requestAnimationFrame(syncAudioPlayback);
+  }
+}
 
-    // 1秒ごとに再生タイミングを確認
-    const intervalId = setInterval(syncAudioPlayback, 10);
+// 初回呼び出し
+let animationFrameId = requestAnimationFrame(syncAudioPlayback);
+
   </script>
 </body>
 </html>
