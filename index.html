@@ -17,22 +17,25 @@
       color: white; /* 全体の文字色を白に */
     }
 
-    h1, p, button {
+    h1, p {
       color: white; /* 各表示項目の文字色を白に */
     }
 
     button {
-      background-color: rgba(255, 255, 255, 0.2); /* ボタンの背景色を半透明に */
-      color: white;
-      border: 1px solid white;
+      background-color: white; /* ボタンの背景色を不透明の白に */
+      color: black; /* ボタンの文字色を黒に */
+      border: none; /* ボーダーを削除 */
       padding: 10px 20px;
+      width: 66.67vw; /* ボタンの横幅を端末の横幅の3分の2に設定 */
+      max-width: 400px; /* ボタンの最大幅を400pxに制限 */
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
+      text-align: center;
     }
 
     button:hover {
-      background-color: rgba(255, 255, 255, 0.4); /* ボタンのホバー時の背景色 */
+      background-color: #f0f0f0; /* ホバー時に少し明るくする */
     }
   </style>
 </head>
