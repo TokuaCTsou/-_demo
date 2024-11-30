@@ -13,7 +13,7 @@
       height: 100vh; /* ビューポート全体の高さ */
       margin: 0;
       background: url('ZKS_demo_BG.png') no-repeat center center; /* 背景画像 */
-      background-size: cover; /* 端末の横幅に合わせて表示 */
+      background-size: cover; /* 背景を端末の横幅に合わせて表示 */
       color: white; /* 全体の文字色を白に */
     }
 
@@ -21,28 +21,37 @@
       color: white; /* 各表示項目の文字色を白に */
     }
 
+    .content {
+      flex: 1; /* 余白を確保する */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
     button {
       position: absolute;
-      bottom: 4px; /* 画面の下端から20pxの位置に配置 */
-      background-color: rgb(202, 202, 202); /* ボタンの背景色を不透明の白に */
+      bottom: 4px; /* 画面の下端から4pxの位置に配置 */
+      background-color: rgb(199, 199, 199); /* ボタンの背景色を不透明の白に */
       color: black; /* ボタンの文字色を黒に */
       border: none; /* ボーダーを削除 */
+      padding: 10px 20px;
       width: 66.67vw; /* ボタンの横幅を端末の横幅の3分の2に設定 */
       max-width: 400px; /* ボタンの最大幅を400pxに制限 */
       border-radius: 5px;
-      font-size: 16px;
+      font-size: 22px;
       cursor: pointer;
       text-align: center;
     }
 
-    button:hover {
-      background-color: #f0f0f0; /* ホバー時に少し明るくする */
-    }
   </style>
 </head>
 <body>
-
-    <button id="startButton">デモに参加</button>
+  <div class="content">
+    <h1>Audio Sync Demo</h1>
+    <p id="status">同期中...</p>
+  </div>
+  <button id="start-button">デモに参加する</button>
     <audio id="audio" preload="auto" src="your-audio-file.mp3"></audio>
     <script>
         // 再生開始時刻（例: 20:00:00）
