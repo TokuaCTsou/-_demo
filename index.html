@@ -22,11 +22,8 @@
     }
 
     .content {
-      flex: 1; /* 余白を確保する */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      margin-top: 10px; /* ボタンから少し余白を作る */
+      text-align: center;
     }
 
     button {
@@ -48,7 +45,6 @@
 </head>
 <body>
   <div class="content">
-    <h1>Audio Sync Demo</h1>
     <p id="status">同期中...</p>
   </div>
   <button id="start-button">デモに参加する</button>
