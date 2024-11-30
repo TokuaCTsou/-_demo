@@ -92,7 +92,6 @@
       const delay = targetTime - now;
 
       if (delay <= 0) {
-        audio.currentTime = 0; // 再生位置を先頭にリセット
         audio.play().catch((error) => {
           console.error('Playback failed:', error);
         });
@@ -101,7 +100,7 @@
     }
 
     // 1秒ごとに再生タイミングを確認
-    const intervalId = setInterval(syncAudioPlayback, 1000);
+    const intervalId = setInterval(syncAudioPlayback, 100);
   </script>
 </body>
 </html>
