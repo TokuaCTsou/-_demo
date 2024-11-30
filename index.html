@@ -10,26 +10,26 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh; /* ビューポート全体の高さ */
+      height: 100vh;
       margin: 0;
-      background: url('ZKS_demo_BG.png') no-repeat center center; /* 背景画像 */
-      background-size: cover; /* 背景を端末の横幅に合わせて表示 */
-      color: white; /* 全体の文字色を白に */
+      background: url('ZKS_demo_BG.png') no-repeat center center;
+      background-size: cover;
+      color: white;
     }
 
     h1, p {
-      color: white; /* 各表示項目の文字色を白に */
+      color: white;
     }
 
     button {
       position: absolute;
-      bottom: 4px; /* 画面の下端から4pxの位置に配置 */
-      background-color: rgb(199, 199, 199); /* ボタンの背景色を不透明の白に */
-      color: black; /* ボタンの文字色を黒に */
-      border: none; /* ボーダーを削除 */
+      bottom: 4px;
+      background-color: rgb(199, 199, 199);
+      color: black;
+      border: none;
       padding: 10px 20px;
-      width: 66.67vw; /* ボタンの横幅を端末の横幅の3分の2に設定 */
-      max-width: 400px; /* ボタンの最大幅を400pxに制限 */
+      width: 66.67vw;
+      max-width: 400px;
       border-radius: 10px;
       font-size: 22px;
       cursor: pointer;
@@ -38,35 +38,34 @@
 
     .content {
       position: absolute;
-      bottom: 1px; /* 画面の下端から4pxの位置に配置 */
+      bottom: 1px;
       text-align: center;
     }
   </style>
 </head>
 <body>
+  a2
   <div class="content">
     <p id="status">同期中...</p>
   </div>
   <button id="startButton">デモに参加する</button>
   <audio id="audio" preload="auto" src="your-audio-file.mp3"></audio>
   <script>
-    // AudioContext を作成
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const audio = document.getElementById('audio');
     const startButton = document.getElementById('startButton');
+
+    // AudioContextの作成
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     // 音源の事前ロード
     async function preloadAudio() {
       try {
-        // AudioContext を使用して音源を再生してブラウザの再生権限を取得し、その後即停止
-        const playPromise = audio.play();
-        if (playPromise) {
-          await playPromise;
-        }
-        // すぐに停止し、再生位置をリセット
-        audio.pause();
-        audio.currentTime = 0;
+        const audioBuffer = await fetch('your-audio-file.mp3')
+          .then(response => response.arrayBuffer())
+          .then(data => audioContext.decodeAudioData(data));
+        
         console.log('Audio preloaded successfully.');
+        return audioBuffer;
       } catch (error) {
         console.error('Failed to preload audio:', error);
       }
@@ -75,34 +74,32 @@
     // ボタンをクリックしたときの処理
     startButton.addEventListener('click', async () => {
       try {
-        // 音源の事前ロードを呼び出す
-        await preloadAudio();
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const audioBuffer = await preloadAudio();
+        await new Promise(resolve => setTimeout(resolve, 300));
         alert('ブラウザの再生権限を取得しました');
         startButton.style.display = 'none'; // ボタンを非表示
 
-        // 音声の再生をスケジュールする処理
-        const currentTime = audioContext.currentTime;
-        const targetTime = new Date();
-        targetTime.setHours(20, 55, 0, 0); // 目標時刻を設定
-        const delay = (targetTime - new Date()) / 1000; // 秒単位での遅延
+        // 0.1秒単位での再生タイミングの確認
+        function checkAndPlay() {
+          const now = audioContext.currentTime;
+          const targetTime = new Date();
+          targetTime.setHours(21, 6, 0, 0); // 目標時刻を設定
+          const delay = targetTime.getTime() / 1000 - now; // 現在の時刻との差を計算（秒単位）
 
-        if (delay > 0) {
-          // AudioContext を使用して音声を再生
-          const source = audioContext.createBufferSource();
-          const response = await fetch('your-audio-file.mp3');
-          const arrayBuffer = await response.arrayBuffer();
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-          source.buffer = audioBuffer;
-
-          // 音源を AudioContext の destination に接続
-          source.connect(audioContext.destination);
-          source.start(currentTime + delay);
-
-          console.log('Audio scheduled to play at:', currentTime + delay);
+          if (delay <= 0.1) { // 0.1秒以内で再生を開始
+            const audioSource = audioContext.createBufferSource();
+            audioSource.buffer = audioBuffer;
+            audioSource.connect(audioContext.destination);
+            audioSource.start(audioContext.currentTime);
+            console.log('Audio playback started');
+            clearInterval(intervalId); // タイマーをクリア
+          }
         }
+
+        // 0.1秒ごとに再生タイミングを確認
+        const intervalId = setInterval(checkAndPlay, 50); // 0.1秒単位
       } catch (error) {
-        console.error('Failed to start audio:', error);
+        alert('Failed to authorize audio playback: ' + error);
       }
     });
   </script>
