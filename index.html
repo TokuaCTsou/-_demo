@@ -75,7 +75,7 @@
     startButton.addEventListener('click', async () => {
       try {
         const audioBuffer = await preloadAudio();
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         alert('ブラウザの再生権限を取得しました');
         startButton.style.display = 'none'; // ボタンを非表示
 
@@ -83,7 +83,7 @@
         function checkAndPlay() {
           const now = audioContext.currentTime;
           const targetTime = new Date();
-          targetTime.setHours(21, 6, 0, 0); // 目標時刻を設定
+          targetTime.setHours(21, 8, 0, 0); // 目標時刻を設定
           const delay = targetTime.getTime() / 1000 - now; // 現在の時刻との差を計算（秒単位）
 
           if (delay <= 0.1) { // 0.1秒以内で再生を開始
