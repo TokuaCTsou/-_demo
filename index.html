@@ -41,72 +41,57 @@
       bottom: 1px; /* 画面の下端から4pxの位置に配置 */
       text-align: center;
     }
-
   </style>
 </head>
 <body>
-  v19
+  v20
   <div class="content">
     <p id="status">同期中...</p>
   </div>
   <button id="startButton">デモに参加する</button>
-  <audio id="audio" preload="auto" src="your-audio-file.mp3"></audio>
   <script>
-    // 再生開始時刻（例: 18:55:00）
-    const targetTime = new Date();
-    targetTime.setHours(20, 44, 0, 0); // 今日の18時55分00秒
-
-    const audio = document.getElementById('audio');
+    // AudioContext の作成
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const startButton = document.getElementById('startButton');
 
     // 音源の事前ロード
-    async function preloadAudio() {
-      try {
-        // 音源を再生してブラウザの再生権限を取得し、その後即停止
-        const playPromise = audio.play();
-        if (playPromise) {
-          await playPromise;
-        }
-        await new Promise(resolve => setTimeout(resolve, 300)); // 300ミリ秒の遅延を挿入
-        audio.pause(); // 再生を即停止
-        audio.currentTime = 0; // 再生位置を先頭にリセット
-        console.log('Audio preloaded successfully.');
-      } catch (error) {
-        console.error('Failed to preload audio:', error);
-      }
-    }
+    let audioBuffer;
+    fetch('your-audio-file.mp3')
+      .then(response => response.arrayBuffer())
+      .then(data => audioContext.decodeAudioData(data))
+      .then(decodedData => {
+        audioBuffer = decodedData;
+        console.log('Audio loaded successfully.');
+      })
+      .catch(error => console.error('Error loading audio:', error));
+
+    // 再生開始時刻（例: 20:31:00）
+    const targetTime = new Date();
+    targetTime.setHours(20, 52, 0, 0); // 目標時刻を設定
 
     // ボタンをクリックしたときの処理
     startButton.addEventListener('click', async () => {
-      try {
-        // 音源の事前ロードを呼び出す
-        await preloadAudio();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        alert('ブラウザの再生権限を取得しました');
-        startButton.style.display = 'none'; // ボタンを非表示
-      } catch (error) {
-        alert('Failed to authorize audio playback: ' + error);
+      if (audioBuffer) {
+        // 音源の事前ロードを行った後に音声を再生してブラウザの再生権限を取得する
+        try {
+          const currentTime = audioContext.currentTime;
+          const delay = (targetTime - new Date()) / 1000; // 秒単位での遅延
+
+          if (delay > 0) {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            source.start(currentTime + delay);
+            console.log('Audio scheduled to play at:', currentTime + delay);
+          }
+
+          alert('ブラウザの再生権限を取得しました');
+          startButton.style.display = 'none'; // ボタンを非表示
+        } catch (error) {
+          console.error('Failed to start audio:', error);
+        }
       }
     });
-
-    // 時刻同期チェック
-    function syncAudioPlayback() {
-  const now = new Date();
-  const delay = targetTime - now;
-
-  if (delay <= 0) {
-    audio.play().catch((error) => {
-      console.error('Playback failed:', error);
-    });
-    cancelAnimationFrame(animationFrameId); // アニメーションのループを停止
-  } else {
-    animationFrameId = requestAnimationFrame(syncAudioPlayback);
-  }
-}
-
-// 初回呼び出し
-let animationFrameId = requestAnimationFrame(syncAudioPlayback);
-
   </script>
 </body>
 </html>
