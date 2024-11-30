@@ -45,7 +45,7 @@
   </style>
 </head>
 <body>
-  v3
+  v4
   <div class="content">
     <p id="status">同期中...</p>
   </div>
@@ -54,7 +54,7 @@
   <script>
     // 再生開始時刻（例: 18:55:00）
     const targetTime = new Date();
-    targetTime.setHours(19, 34, 0, 0); // 今日の18時55分00秒
+    targetTime.setHours(19, 40, 0, 0); // 今日の18時55分00秒
 
     const audio = document.getElementById('audio');
     const startButton = document.getElementById('startButton');
@@ -80,6 +80,7 @@
       try {
         // 音源の事前ロードを呼び出す
         await preloadAudio();
+        await new Promise(resolve => setTimeout(resolve, 500));
         alert('ブラウザの再生許可を取得しました');
         startButton.style.display = 'none'; // ボタンを非表示
       } catch (error) {
@@ -101,7 +102,7 @@
     }
 
     // 1秒ごとに再生タイミングを確認
-    const intervalId = setInterval(syncAudioPlayback, 200);
+    const intervalId = setInterval(syncAudioPlayback, 300);
   </script>
 </body>
 </html>
